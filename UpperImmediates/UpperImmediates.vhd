@@ -10,6 +10,6 @@ end UpperImmediates;
 architecture dataflow of UpperImmediates is
 
 begin
-lower8bitsVariable <= largeVariable(15 downto 0);     --Store the lower 8 bits of largeVariable
-upper8bitsVariable <= largeVariable(31 downto 16);    --Store the upper 8 bits of largerVatiable
+lower16bitsVariable <= largeVariable(15 downto 0);     --Store the lower 16 bits of largeVariable
+upper8bitsVariable <= largeVariable(31 downto 16);    --Store the upper 16 bits of largerVatiable
 end dataflow;
