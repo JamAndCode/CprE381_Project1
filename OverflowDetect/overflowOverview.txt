@@ -1,0 +1,2 @@
+the overflow detector works by comparing the most significant bit (MSB) of the used inputs and their output.
+If the two values are equal in sign (either (+ and +) or (- and -)), but the result is the opposite sign, there is overflow.
