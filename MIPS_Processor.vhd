@@ -194,6 +194,23 @@ begin
        		i_D1 	=> ,--TODO: 
        		o_O	=> );--TODO: 
 
+ShiftFromInstMem: barShifter
+  port MAP(i_A 	=> , --TODO
+	i_LorR	=> , --TODO
+	i_Ss 	=> , --TODO
+	o_F 	=> );--TODO
+
+ShiftFromRegFile: barShifter
+  port MAP(i_A 	=> , --TODO
+	i_LorR	=> , --TODO
+	i_Ss 	=> , --TODO
+	o_F 	=> );--TODO
+
+UpperImms: UpperImmediates
+port MAP(largeVar	=> ,
+     lowerbits	=> , 
+     upperbits	=> );
+end component;
 
 end structure;
 
