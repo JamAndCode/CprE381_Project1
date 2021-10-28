@@ -210,7 +210,6 @@ UpperImms: UpperImmediates
 port MAP(largeVar	=> ,
      lowerbits	=> , 
      upperbits	=> );
-end component;
 
 end structure;
 
