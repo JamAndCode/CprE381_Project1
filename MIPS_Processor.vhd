@@ -53,6 +53,22 @@ architecture structure of MIPS_Processor is
   -- Required overflow signal -- for overflow exception detection
   signal s_Ovfl         : std_logic;  -- TODO: this signal indicates an overflow exception would have been initiated
 
+signal s_Extended	: std_logic_vector(31 downto 0);
+signal s_RDWJL		: std_logic_vector(31 downto 0); --Signal between register destination write mux and jump and link mux
+signal s_RegReadData1	: std_logic_vector(31 downto 0); --signal out of register file for read data 1
+signal s_ALURead1	: std_logic_vector(31 downto 0); --signa between shift mux and ALU
+signal s_ALURead2	: std_logic_vector(31 downto 0); --signa between ALURSC mux and ALU
+signal s_MtRUI		: std_logic_vector(31 downto 0); --signal between MemtoReg mux and upper immediate mux
+signal s_UItSLT		: std_logic_vector(31 downto 0); --signal between upper immediate to set on less than
+signal s_SLTtJALC	: std_logic_vector(31 downto 0); --signal between set on less than to jump and link control
+signal s_ALUzero	: std_logic; --signal of alu from zero output
+signal s_Andcontrol	: std_logic; --signal from AND controlling branch
+signal s_RegShift	: std_logic_vector(31 downto 0); --signal out of the register barrel shifter
+signal s_AdderFromPC	: std_logic_vector(31 downto 0); --signal from the adder coming from PC output
+signal s_AdderFromShifter	: std_logic_vector(31 downto 0); --signal from the second adder output
+signal s_BCtJC		: std_logic_vector(31 downto 0); --signal from branch control mux to jump control mux
+signal s_JCtJRC		: std_logic_vector(31 downto 0); --signal from jump control mux to jump register control mux
+
   component mem is
     generic(ADDR_WIDTH : integer;
             DATA_WIDTH : integer);
@@ -72,6 +88,24 @@ architecture structure of MIPS_Processor is
 		i_ADDresult	: in std_logic;
 		o_Overflow	: out std_logic);
 	end component;
+
+component registerBoi is
+  port(	i_CLK	    : in std_logic;
+	i_WriteEnable	: in std_logic;
+	i_RST		: in std_logic;
+	i_ReadReg1	: in std_logic_vector(4 downto 0);
+	i_ReadReg2	: in std_logic_vector(4 downto 0);
+	i_WriteReg	: in std_logic_vector(4 downto 0);
+	i_WriteData	: in std_logic_vector(31 downto 0);
+	o_ReadData1	: out std_logic_vector(31 downto 0);
+	o_ReadData2	: out std_logic_vector(31 downto 0));
+end component;
+
+component extend is
+  port( i_A		: in std_logic_vector(15 downto 0);
+	i_S		: in std_logic;
+	o_F		: out std_logic_vector(31 downto 0));
+end component;
 
 component instructCount is
   port (iCLK		: in std_logic;
@@ -94,7 +128,6 @@ port(largeVar	: in  std_logic_vector(31 downto 0);
 end component;
 
 component ALU is
-generic(N : integer := 32);
   port (i_read1      : in std_logic_vector(N-1 downto 0);
         i_read2      : in std_logic_vector(N-1 downto 0);
         i_control    : in std_logic_vector(4-1 downto 0);
@@ -108,6 +141,20 @@ component mux32_N is
        i_D0         : in std_logic_vector(N-1 downto 0);
        i_D1         : in std_logic_vector(N-1 downto 0);
        o_O          : out std_logic_vector(N-1 downto 0));
+end component;
+
+component andg2 is
+  port(i_A          : in std_logic;
+       i_B          : in std_logic;
+       o_F          : out std_logic);
+end component;
+
+component add_sub is
+port(i_A	: in std_logic_vector(N-1 downto 0);
+     i_B 	: in std_logic_vector(N-1 downto 0); 	
+     S		: in std_logic;
+     o_Sum	: out std_logic_vector(N-1 downto 0);
+     o_Cout	: out std_logic);
 end component;
 
 begin
@@ -139,65 +186,70 @@ begin
   -- TODO: Ensure that s_Ovfl is connected to the overflow output of your ALU
 
   -- TODO: Implement the rest of your processor below this comment! 
+  Extender: extend
+  port MAP(i_A	=> s_Inst(15 downto 0),
+	i_S	=> '1',
+	o_F	=> s_Extended);
 
   MemtoReg: mux32_N
 	port MAP(i_S    => --TODO: Connect this to the MemToReg from controller
        		i_D0   	=> s_DMemOut,
-       		i_D1 	=> --TODO: connect this from the ALU output
-       		o_O	=> );--TODO: connect this to the upper immediate control mux
+       		i_D1 	=> s_DMemAddr,
+       		o_O	=> s_MtRUI);
+
+  UpperImmediate: mux32_N
+	port MAP(i_S    => ,--TODO: 
+       		i_D0   	=> s_Extended,
+       		i_D1 	=> s_MtRUI,
+       		o_O	=> s_UItSLT);--TODO:
 
   SetOnLess: mux32_N
 	port MAP(i_S    => ,--TODO: 
        		i_D0   	=> ,--TODO:
-       		i_D1 	=> ,--TODO: 
-       		o_O	=> );--TODO: 
+       		i_D1 	=> s_UItSLT, 
+       		o_O	=> s_SLTtJALC);
 
-  BranchControl: mux32_N
-	port MAP(i_S    => ,--TODO: 
-       		i_D0   	=> ,--TODO:
-       		i_D1 	=> ,--TODO: 
-       		o_O	=> );--TODO:
 
   JumpAndLinkDataWriter: mux32_N
 	port MAP(i_S    => ,--TODO: 
        		i_D0   	=> ,--TODO:
-       		i_D1 	=> ,--TODO: 
-       		o_O	=> );--TODO: 
+       		i_D1 	=> s_SLTtJALC, 
+       		o_O	=> s_RegWrData);
 
   RegDestWrite: mux32_N
 	port MAP(i_S    => ,--TODO: 
-       		i_D0   	=> ,--TODO:
-       		i_D1 	=> ,--TODO: 
-       		o_O	=> );--TODO: 
+       		i_D0   	=> s_Inst(20 downto 16),
+       		i_D1 	=> s_Inst(15 downto 11),
+       		o_O	=> s_RDWJL);
 
   JumpAndLink: mux32_N
 	port MAP(i_S    => ,--TODO: 
-       		i_D0   	=> ,--TODO:
+       		i_D0   	=> s_RDWJL,
        		i_D1 	=> ,--TODO: 
-       		o_O	=> );--TODO: 
+       		o_O	=> s_RegWrAddr); 
 
   ShiftControl: mux32_N
 	port MAP(i_S    => ,--TODO: 
-       		i_D0   	=> ,--TODO:
-       		i_D1 	=> ,--TODO: 
-       		o_O	=> );--TODO: 
+       		i_D0   	=> s_RegReadData1,
+       		i_D1 	=> s_Inst,
+       		o_O	=> s_ALURead1); 
 
   ALUsrc: mux32_N
 	port MAP(i_S    => ,--TODO: 
-       		i_D0   	=> ,--TODO:
-       		i_D1 	=> ,--TODO: 
-       		o_O	=> );--TODO: 
+       		i_D0   	=> s_RegWrData,
+       		i_D1 	=> s_Extended, 
+       		o_O	=> s_ALURead2);
 
   JumpControl: mux32_N
 	port MAP(i_S    => ,--TODO: 
        		i_D0   	=> ,--TODO:
-       		i_D1 	=> ,--TODO: 
-       		o_O	=> );--TODO: 
+       		i_D1 	=> s_BCtJC, 
+       		o_O	=> s_JCtJRC);
 
   JumpReg: mux32_N
 	port MAP(i_S    => ,--TODO: 
-       		i_D0   	=> ,--TODO:
-       		i_D1 	=> ,--TODO: 
+       		i_D0   	=> s_JCtJRC,
+       		i_D1 	=> s_RegReadData1, 
        		o_O	=> );--TODO: 
 
 ShiftFromInstMem: barShifter
@@ -207,15 +259,59 @@ ShiftFromInstMem: barShifter
 	o_F 	=> );--TODO
 
 ShiftFromRegFile: barShifter
-  port MAP(i_A 	=> , --TODO
+  port MAP(i_A 	=> s_Extended,
 	i_LorR	=> , --TODO
 	i_Ss 	=> , --TODO
-	o_F 	=> );--TODO
+	o_F 	=> s_RegShift);
+
+  BranchControl: mux32_N
+	port MAP(i_S    => s_Andcontrol, 
+       		i_D0   	=> s_AdderFromPC,
+       		i_D1 	=> s_AdderFromShifter,
+       		o_O	=> s_BCtJC);
 
 UpperImms: UpperImmediates
-port MAP(largeVar	=> ,
+port MAP(largeVar	=> s_Extended,
      lowerbits	=> , 
      upperbits	=> );
+
+register1: registerBoi
+  port MAP(	i_CLK	    => ,
+	i_WriteEnable	=> ,
+	i_RST		=> ,
+	i_ReadReg1	=> s_Inst(25 downto 21),
+	i_ReadReg2	=> s_Inst(20 downto 16),
+	i_WriteReg	=> s_RegWrAddr,
+	i_WriteData	=> s_RegWrData,
+	o_ReadData1	=> s_RegReadData1,
+	o_ReadData2	=> s_RegWrData);
+
+alu: ALU 
+  port MAP(i_read1      => s_ALURead1,
+        i_read2      => s_ALURead2,
+        i_control    => ,
+        o_result     => s_DMemAddr,
+        o_zero       => s_ALUzero,
+	o_overflow   => );
+
+andControl: andg2
+  port MAP(i_A        => s_ALUzero,
+       i_B            => ,
+       o_F            => s_Andcontrol);
+
+adderFromPC: add_sub
+port MAP(i_A	=> "0x00000004",
+     i_B 	=> iInstExt,
+     S		=> '0', --CHANGE IF THIS IS SUBTRACTING CAUSE WE DONT KNOW FOR SURE
+     o_Sum	=> s_AdderFromPC,
+     o_Cout	=> );
+
+adderFromShifter: add_sub
+port MAP(i_A	=> s_AdderFromPC,
+     i_B 	=> s_RegShift,
+     S		=> '0', --CHANGE IF THIS IS SUBTRACTING CAUSE WE DONT KNOW FOR SURE
+     o_Sum	=> s_AdderFromShifter,
+     o_Cout	=> );
 
 end structure;
 
