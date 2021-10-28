@@ -152,6 +152,12 @@ begin
        		i_D1 	=> ,--TODO: 
        		o_O	=> );--TODO: 
 
+  BranchControl: mux32_N
+	port MAP(i_S    => ,--TODO: 
+       		i_D0   	=> ,--TODO:
+       		i_D1 	=> ,--TODO: 
+       		o_O	=> );--TODO:
+
   JumpAndLinkDataWriter: mux32_N
 	port MAP(i_S    => ,--TODO: 
        		i_D0   	=> ,--TODO:
