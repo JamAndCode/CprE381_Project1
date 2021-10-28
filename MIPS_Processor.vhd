@@ -91,7 +91,7 @@ component UpperImmediates is
 port(largeVar	: in  std_logic_vector(31 downto 0); 
      lowerbits	: out std_logic_vector(15 downto 0); 
      upperbits	: out std_logic_vector(15 downto 0)); 
-end UpperImmediates;
+end component;
 
 component ALU is
 generic(N : integer := 32);
@@ -101,6 +101,13 @@ generic(N : integer := 32);
         o_result      : out std_logic_vector(N-1 downto 0);
         o_zero        : out std_logic;
 	o_overflow    : out std_logic);
+end component;
+
+component mux32_N is
+  port(i_S          : in std_logic;
+       i_D0         : in std_logic_vector(N-1 downto 0);
+       i_D1         : in std_logic_vector(N-1 downto 0);
+       o_O          : out std_logic_vector(N-1 downto 0));
 end component;
 
 begin
@@ -133,7 +140,59 @@ begin
 
   -- TODO: Implement the rest of your processor below this comment! 
 
+  MemtoReg: mux32_N
+	port MAP(i_S    => --TODO: Connect this to the MemToReg from controller
+       		i_D0   	=> s_DMemOut,
+       		i_D1 	=> --TODO: connect this from the ALU output
+       		o_O	=> );--TODO: connect this to the upper immediate control mux
 
+  SetOnLess: mux32_N
+	port MAP(i_S    => ,--TODO: 
+       		i_D0   	=> ,--TODO:
+       		i_D1 	=> ,--TODO: 
+       		o_O	=> );--TODO: 
+
+  JumpAndLinkDataWriter: mux32_N
+	port MAP(i_S    => ,--TODO: 
+       		i_D0   	=> ,--TODO:
+       		i_D1 	=> ,--TODO: 
+       		o_O	=> );--TODO: 
+
+  RegDestWrite: mux32_N
+	port MAP(i_S    => ,--TODO: 
+       		i_D0   	=> ,--TODO:
+       		i_D1 	=> ,--TODO: 
+       		o_O	=> );--TODO: 
+
+  JumpAndLink: mux32_N
+	port MAP(i_S    => ,--TODO: 
+       		i_D0   	=> ,--TODO:
+       		i_D1 	=> ,--TODO: 
+       		o_O	=> );--TODO: 
+
+  ShiftControl: mux32_N
+	port MAP(i_S    => ,--TODO: 
+       		i_D0   	=> ,--TODO:
+       		i_D1 	=> ,--TODO: 
+       		o_O	=> );--TODO: 
+
+  ALUsrc: mux32_N
+	port MAP(i_S    => ,--TODO: 
+       		i_D0   	=> ,--TODO:
+       		i_D1 	=> ,--TODO: 
+       		o_O	=> );--TODO: 
+
+  JumpControl: mux32_N
+	port MAP(i_S    => ,--TODO: 
+       		i_D0   	=> ,--TODO:
+       		i_D1 	=> ,--TODO: 
+       		o_O	=> );--TODO: 
+
+  JumpReg: mux32_N
+	port MAP(i_S    => ,--TODO: 
+       		i_D0   	=> ,--TODO:
+       		i_D1 	=> ,--TODO: 
+       		o_O	=> );--TODO: 
 
 
 end structure;
