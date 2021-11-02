@@ -145,6 +145,7 @@ component ALU is
   port (i_read1      : in std_logic_vector(N-1 downto 0);
         i_read2      : in std_logic_vector(N-1 downto 0);
         i_control    : in std_logic_vector(4-1 downto 0);
+	i_overflow_enabled: in std_logic;
         o_result      : out std_logic_vector(N-1 downto 0);
         o_zero        : out std_logic;
 	o_overflow    : out std_logic);
@@ -198,15 +199,14 @@ begin
 
   -- TODO: Ensure that s_Halt is connected to an output control signal produced from decoding the Halt instruction (Opcode: 01 0100)
   -- TODO: Ensure that s_Ovfl is connected to the overflow output of your ALU
-
-  -- TODO: Implement the rest of your processor below this comment! 
+ 
   Extender: extend
   port MAP(i_A	=> s_Inst(15 downto 0),
 	i_S	=> '1',
 	o_F	=> s_Extended);
 
   MemtoReg: mux32_N
-	port MAP(i_S    => --TODO: Connect this to the MemToReg from controller
+	port MAP(i_S    => mem_to_reg,
        		i_D0   	=> s_DMemOut,
        		i_D1 	=> s_DMemAddr,
        		o_O	=> s_MtRUI);
@@ -231,7 +231,7 @@ begin
        		o_O	=> s_RegWrData);
 
   RegDestWrite: mux32_N
-	port MAP(i_S    => ,--TODO: 
+	port MAP(i_S    => reg_dst, 
        		i_D0   	=> s_Inst(20 downto 16),
        		i_D1 	=> s_Inst(15 downto 11),
        		o_O	=> s_RDWJL);
@@ -249,13 +249,13 @@ begin
        		o_O	=> s_ALURead1); 
 
   ALUsrc: mux32_N
-	port MAP(i_S    => ,--TODO: 
+	port MAP(i_S    => alu_src,
        		i_D0   	=> s_RegWrData,
        		i_D1 	=> s_Extended, 
        		o_O	=> s_ALURead2);
 
   JumpControl: mux32_N
-	port MAP(i_S    => ,--TODO: 
+	port MAP(i_S    => jump, 
        		i_D0   	=> ,--TODO:
        		i_D1 	=> s_BCtJC, 
        		o_O	=> s_JCtJRC);
@@ -291,7 +291,7 @@ port MAP(largeVar	=> s_Extended,
 
 register1: registerBoi
   port MAP(	i_CLK	    => ,
-	i_WriteEnable	=> ,
+	i_WriteEnable	=> reg_write,
 	i_RST		=> ,
 	i_ReadReg1	=> s_Inst(25 downto 21),
 	i_ReadReg2	=> s_Inst(20 downto 16),
@@ -303,14 +303,15 @@ register1: registerBoi
 alu: ALU 
   port MAP(i_read1      => s_ALURead1,
         i_read2      => s_ALURead2,
-        i_control    => ,
+        i_control    => alu_control,
+	i_overflow_enabled => i_overflow_enabled,
         o_result     => s_DMemAddr,
         o_zero       => s_ALUzero,
-	o_overflow   => );
+	o_overflow   => s_Ovfl);
 
 andControl: andg2
   port MAP(i_A        => s_ALUzero,
-       i_B            => ,
+       i_B            => o_zero,
        o_F            => s_Andcontrol);
 
 adderFromPC: add_sub
