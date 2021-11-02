@@ -1,12 +1,14 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
+use ieee.numeric_std_unsigned.all;
 
 entity ALU is
 generic(N : integer := 32);
   port (i_read1      : in std_logic_vector(N-1 downto 0);
         i_read2      : in std_logic_vector(N-1 downto 0);
         i_control    : in std_logic_vector(4-1 downto 0);
+	i_overflow_enabled: in std_logic;
         o_result      : out std_logic_vector(N-1 downto 0);
         o_zero        : out std_logic;
 	o_overflow    : out std_logic);
@@ -58,25 +60,38 @@ case (i_control) is
       when "0001" =>      -- OR
 	o_result <= i_read1 OR i_read2;
 	o_overflow<='0';
-	
 	when "0011"=>	  -- NOR
 	o_result <= i_read1 nor i_read2;
 	o_overflow<='0';
-	
-	when "0111"=>	--xor
-	o_result<= i_read1 xor i_read2;
+
+	when "1111"=>	  -- XOR
+	o_result <= i_read1 xor i_read2;
 	o_overflow<='0';
-	
+
 	when "0100"=>	  -- SLT
 	e<=((not i_read1(31)) and i_read2(31))  or (i_read1(31) and i_read2(31) and subtract(31)) or ((not i_read1(31)) and (not i_read2(31)) and subtract(31));
 	o_overflow<='0';
 	o_result <=e and x"80000000";
 	o_result<=o_result(31) and x"00000001";
+
+	when "0101"=>	  -- SLL
+	o_result<=i_read1 sll to_integer(unsigned(i_read2));
+
+	when "1110"=>	  -- SRL
+	o_result<=i_read1 srl to_integer(unsigned(i_read2));
+
+	when "0111"=>	  -- SRA
+	o_result<=i_read1 sra to_integer(unsigned(i_read2));
 	
 
 	when "0010"=>     -- ADD
 	o_result <= add;
+	case(i_overflow_enabled) is
+	when '1'=>
 	o_overflow<=(i_read1(31) and i_read2(31)) or (i_read1(31) and (not i_read2(31)) and (not add(31))) or (i_read2(31) and (not i_read1(31)) and (not add(31)));
+	when others=>
+	o_overflow<='0';
+	end case;
 	when "0110"=>     -- SUB
 	o_result <= subtract;
 	o_overflow<=((not i_read1(31)) and i_read2(31))  or (i_read1(31) and i_read2(31) and subtract(31)) or ((not i_read1(31)) and (not i_read2(31)) and subtract(31));
@@ -107,7 +122,6 @@ o_zero <= '1' when x"00000000",
 
 
 end behavior;
-
 
 
 
