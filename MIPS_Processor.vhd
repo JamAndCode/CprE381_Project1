@@ -88,6 +88,20 @@ signal s_JCtJRC		: std_logic_vector(31 downto 0); --signal from jump control mux
 		i_ADDresult	: in std_logic;
 		o_Overflow	: out std_logic);
 	end component;
+component control is
+  port (op_code	       : in std_logic_vector(5 downto 0);
+	reg_dst	       : out std_logic;
+	jump	       : out std_logic;
+	branch         : out std_logic;
+	mem_read         : out std_logic;
+	mem_to_reg         : out std_logic;
+	mem_write         : out std_logic;
+	alu_src         : out std_logic;
+	reg_write         : out std_logic;
+	o_overflow_enabled: out std_logic;
+	fun       :   in std_logic_vector(5 downto 0);
+        alu_control    : out std_logic_vector(3 downto 0));
+end component;
 
 component registerBoi is
   port(	i_CLK	    : in std_logic;
