@@ -6,6 +6,9 @@ entity control is
   port (op_code	       : in std_logic_vector(5 downto 0);
 	reg_dst	       : out std_logic;
 	jump	       : out std_logic;
+	jump_link      : out std_logic;
+	jump_reg       : out std_logic;
+	upper	       : out std_logic;
 	branch         : out std_logic;
 	mem_read         : out std_logic;
 	mem_to_reg         : out std_logic;
@@ -37,6 +40,10 @@ mem_to_reg<='0';
 mem_write<='0';
 alu_src<='0';
 reg_write<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
+
 
 
 
@@ -51,6 +58,9 @@ alu_src<='0';
 reg_write<='0';
 alu_control <= "0010";	--does not care,implement by default
 o_overflow_enabled<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
 
 
 when "000011"=>	--jal type instruction
@@ -64,6 +74,11 @@ alu_src<='0';
 reg_write<='1';
 alu_control <= "0010";	--does not care,implement by default
 o_overflow_enabled<='1';
+jump_link<='1';
+jump_reg<='0';
+upper<='0';
+
+
 
 when "001000"=>	--addi(I type)
 reg_dst<='0';		
@@ -76,6 +91,9 @@ alu_src<='1';
 reg_write<='1';
 alu_control <= "0010";	
 o_overflow_enabled<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
 
 when "001001"=>	--addiu(I type)
 reg_dst<='0';		
@@ -88,6 +106,9 @@ alu_src<='1';
 reg_write<='1';
 alu_control <= "0010";	
 o_overflow_enabled<='0';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
 
 
 when "001100"=>	--andi(I type)
@@ -101,6 +122,9 @@ alu_src<='1';
 reg_write<='1';
 alu_control <= "0000";
 o_overflow_enabled<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
 
 
 when "001111"=>	--lui(I type)---need implement in alu
@@ -114,6 +138,9 @@ alu_src<='1';
 reg_write<='1';
 alu_control <= "0010";	
 o_overflow_enabled<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='1';
 
 
 when "100011"=>	--lw(I type)
@@ -127,6 +154,9 @@ alu_src<='1';
 reg_write<='1';
 alu_control <= "0010";	
 o_overflow_enabled<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
 
 
 when "001110"=>	--xori(I type)
@@ -140,6 +170,9 @@ alu_src<='1';
 reg_write<='1';
 alu_control <= "1111";	
 o_overflow_enabled<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
 
 
 when "001101"=>	--ori(I type)
@@ -153,6 +186,9 @@ alu_src<='1';
 reg_write<='1';
 alu_control <= "0001";	
 o_overflow_enabled<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
 
 when "001010"=>	--slti(I type)
 reg_dst<='0';		
@@ -165,6 +201,9 @@ alu_src<='1';
 reg_write<='0';
 alu_control <= "0100";
 o_overflow_enabled<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
 
 when "101011"=>	--sw(I type)
 reg_dst<='0';		
@@ -177,6 +216,9 @@ alu_src<='1';
 reg_write<='0';
 alu_control <= "0010";
 o_overflow_enabled<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
 
 when "000100"=>	--beq(I type)
 reg_dst<='0';		
@@ -189,6 +231,9 @@ alu_src<='1';
 reg_write<='0';
 alu_control <= "0110";
 o_overflow_enabled<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
 
 
 when "000101"=>	--bne(I type)
@@ -202,6 +247,9 @@ alu_src<='1';
 reg_write<='0';
 alu_control <= "0110";
 o_overflow_enabled<='1';
+jump_link<='0';
+jump_reg<='0';
+upper<='0';
 
 
 
@@ -256,6 +304,14 @@ when "100110" =>
 alu_control <= "1111";	--xor
 o_overflow_enabled<='1';
 
+when "001000"=>	--jr type instruction
+alu_control <= "0010";	--does not care,implement by default
+o_overflow_enabled<='1';
+jump<='1';
+jump_link<='0';
+jump_reg<='1';
+
+
 when others=>
 end case;
 
@@ -266,5 +322,4 @@ end process;
 
 
 end behavior;
-
 
