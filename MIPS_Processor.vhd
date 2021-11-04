@@ -80,7 +80,13 @@ signal s_ALUsrc			: std_logic;
 signal s_overflowEnable		: std_logic;  
 signal s_ALUcontrol		: std_logic_vector(3 downto 0);
 signal s_Cout			: std_logic;
-signal s_CoutTrash		: std_logic;
+signal s_CoutTrash		: std_logic; --Couts are not connected to anything but still need to be signaled
+signal s_jump_link      	: std_logic;
+signal s_jump_reg       	: std_logic;
+signal s_upper	      		: std_logic;
+signal s_PCout			: std_logic_vector(31 downto 0);
+signal s_backToPC			: std_logic_vector(31 downto 0); --currently not actually connected, test then add in
+signal s_UpperImmediates	: std_logic_vector(31 downto 0);
 
   component mem is
     generic(ADDR_WIDTH : integer;
@@ -101,18 +107,21 @@ signal s_CoutTrash		: std_logic;
 	end component;
 
 component control is
-  port (op_code	     		: in std_logic_vector(5 downto 0);
-	fun       		: in std_logic_vector(5 downto 0);
-	reg_dst	     		: out std_logic;
-	jump	      		: out std_logic;
-	branch        		: out std_logic;
-	mem_read        	: out std_logic;
-	mem_to_reg      	: out std_logic;
-	mem_write      		: out std_logic;
-	alu_src         	: out std_logic;
-	reg_write         	: out std_logic;
-	o_overflow_enabled	: out std_logic;
-        alu_control    		: out std_logic_vector(3 downto 0));
+  port (op_code	       : in std_logic_vector(5 downto 0);
+	reg_dst	       : out std_logic;
+	jump	       : out std_logic;
+	jump_link      : out std_logic;
+	jump_reg       : out std_logic;
+	upper	       : out std_logic;
+	branch         : out std_logic;
+	mem_read         : out std_logic;
+	mem_to_reg         : out std_logic;
+	mem_write         : out std_logic;
+	alu_src         : out std_logic;
+	reg_write         : out std_logic;
+	o_overflow_enabled: out std_logic;
+	fun       :   in std_logic_vector(5 downto 0);
+        alu_control    : out std_logic_vector(3 downto 0));	---alu control combination
 end component;
 
 component registerBoi is
@@ -211,6 +220,12 @@ begin
 
   -- TODO: Ensure that s_Halt is connected to an output control signal produced from decoding the Halt instruction (Opcode: 01 0100)
   -- TODO: Ensure that s_Ovfl is connected to the overflow output of your ALU
+--PC
+PC: instructCount
+  port MAP(iCLK		=> iCLK,
+	iRST		=> iRST,
+	iInstAddr 	=> iInstAddr,
+	o_F		=> s_IMemAddr);
 
 --Adder from PC
 adderFromPC: add_sub
@@ -222,18 +237,21 @@ port MAP(i_A	=> "00000000000000000000000000000100",
 
 --Control Unit
  controller : control
-  port MAP(	op_code	     		=> s_Inst(5 downto 0),
-		fun       		=> s_Inst(N-1 downto N-7),
-		reg_dst	     		=> s_Reg_Dst,
-		jump	      		=> s_Jump,
-		branch        		=> s_Branch,
-		mem_read        	=> s_MemRead,
-		mem_to_reg      	=> s_MemToReg,
-		mem_write      		=> s_MemWrite,
-		alu_src         	=> s_ALUsrc,
-		reg_write         	=> s_RegWrite,
-		o_overflow_enabled	=> s_overflowEnable,
-        	alu_control    		=> s_ALUcontrol); 
+port MAP(op_code	       => s_Inst(5 downto 0),
+	reg_dst	       => s_Reg_Dst,
+	jump	       => s_Jump,
+	jump_link      => s_jump_link,
+	jump_reg       => s_jump_reg,
+	upper	      => s_upper,
+	branch        => s_Branch,
+	mem_read         => s_MemRead,
+	mem_to_reg         => s_MemToReg,
+	mem_write         => s_MemWrite,
+	alu_src         => s_ALUsrc,
+	reg_write         => s_RegWrite,
+	o_overflow_enabled => s_overflowEnable,
+	fun       => s_Inst(N-1 downto N-7),
+        alu_control    => s_ALUcontrol);	---alu control combination
 
 --The first Barrel Shifter
 ShiftFromInstMem: barShifter
@@ -252,10 +270,11 @@ ShiftFromInstMem: barShifter
 --Jump and Link Mux
 --TODO: More work here
    JumpAndLink: mux32_N
-	port MAP(i_S    => '0',--TODO:
+	port MAP(i_S    => s_jump_link,
        		i_D0   	=> s_RDWJL,
        		i_D1 	=> "00000000000000000000000000000000",--TODO: 
        		o_O	=> s_RegWrAddr); 
+
 
 --Register File
 register1: registerBoi
@@ -318,7 +337,7 @@ TheALU: ALU
 --And signal that controls one of the muxes
 andControl: andg2
   port MAP(i_A        => s_ALUzero,
-       i_B            => o_zero,
+       i_B            => s_ALUzero,
        o_F            => s_Andcontrol);
 
 --Branch control Mux
@@ -337,10 +356,10 @@ andControl: andg2
 
 --Jump and Regisrer Control
   JumpReg: mux32_N
-	port MAP(i_S    => '0',--TODO: 
+	port MAP(i_S    => s_jump_reg, 
        		i_D0   	=> s_JCtJRC,
        		i_D1 	=> s_RegReadData1, 
-       		o_O	=> );--TODO: i SHould go back to the PC
+       		o_O	=> s_backToPC);
 
 --Memory to Register control mux
   MemtoReg: mux32_N
@@ -352,23 +371,15 @@ andControl: andg2
 --Upper Immediate module
 UpperImms: UpperImmediates
 port MAP(largeVar	=> s_Extended,
-     lowerbits	=> , 
-     upperbits	=> );
+     lowerbits	=> s_UpperImmediates(15 downto 0), 
+     upperbits	=> s_UpperImmediates(31 downto 16));
 
 --Upper immediate control mux
   UpperImmediate: mux32_N
-	port MAP(i_S    => '0',--TODO: 
+	port MAP(i_S    => s_upper,
        		i_D0   	=> s_Extended,
        		i_D1 	=> s_MtRUI,
-       		o_O	=> s_UItSLT);--TODO:
-
---Set on less than control mux
-  SetOnLess: mux32_N
-	port MAP(i_S    => '0',--TODO: 
-       		i_D0   	=> "00000000000000000000000000000000",--TODO:
-       		i_D1 	=> s_UItSLT, 
-       		o_O	=> s_SLTtJALC);
-
+       		o_O	=> s_UItSLT);
 
 --Jump and Link control mux
   JumpAndLinkDataWriter: mux32_N
@@ -377,6 +388,5 @@ port MAP(largeVar	=> s_Extended,
        		i_D1 	=> s_SLTtJALC, 
        		o_O	=> s_RegWrData);
 
---Needed modules: PC+4, SLTU (will be added by Wednesday night, 11:59PM)
 end structure;
 
