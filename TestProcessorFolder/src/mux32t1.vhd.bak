@@ -1,0 +1,102 @@
+-------------------------------------------------------------------------
+-- Jamie Anderson
+-- Department of Electrical and Computer Engineering
+-- Iowa State University
+-------------------------------------------------------------------------
+
+
+-- mux32t1.vhd
+-------------------------------------------------------------------------
+-- DESCRIPTION: This file contains an implementation of an 8-to-1 mux 
+-- using the structure of a 2-to-1 mux
+-------------------------------------------------------------------------
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+entity mux32t1 is
+
+  port(i_S1	    : in std_logic_vector(2 downto 0);	--5 Select inputs, 3 for 8:1, 2 for 2:1
+       i_S2	    : in std_logic;
+	i_S3	    : in std_logic;	
+       i_A          : in std_logic_vector(7 downto 0);	--8 inputs per 8:1 mux
+       i_B	    : in std_logic_vector(7 downto 0);
+       i_C          : in std_logic_vector(7 downto 0);
+       i_D	    : in std_logic_vector(7 downto 0);
+       o_F          : out std_logic);			--1 output
+
+end mux32t1;
+
+architecture structure of mux32t1 is
+
+--8 to 1 mux
+  component hybrid_8t1mux is
+    port(i_S	    : in std_logic_vector(2 downto 0);	--3 Select inputs
+         i_A        : in std_logic_vector(7 downto 0);	--8 inputs
+         o_F        : out std_logic);			--1 output
+  end component;
+
+--2 to 1 mux
+  component dataflow_mux2t1 is
+    port(i_S                  : in std_logic;  --1 Select input
+         i_D0                 : in std_logic;  --2 inputs
+         i_D1                 : in std_logic;
+         o_O                  : out std_logic); --1 output
+  end component;
+
+--Signals between muxs
+--Between 8t1 mux to 2t1 mux
+signal s_0	: std_logic;
+signal s_1	: std_logic;
+signal s_2	: std_logic;
+signal s_3	: std_logic;
+
+--Between 2t1 mux to 2t1 mux
+signal s_4	: std_logic;
+signal s_5	: std_logic;
+
+begin
+
+------------------------------------
+-- Layer 1: All 8x1 mux
+------------------------------------
+    g_Mux1: hybrid_8t1mux
+	port MAP(i_S	=> i_S1(2 downto 0),
+		i_A	=> i_A(7 downto 0),
+		o_F	=> s_0);
+
+    g_Mux2: hybrid_8t1mux
+	port MAP(i_S	=> i_S1(2 downto 0),
+		i_A	=> i_B(7 downto 0),
+		o_F	=> s_1);
+    g_Mux3: hybrid_8t1mux
+	port MAP(i_S	=> i_S1(2 downto 0),
+		i_A	=> i_C(7 downto 0),
+		o_F	=> s_2);
+    g_Mux4: hybrid_8t1mux
+	port MAP(i_S	=> i_S1(2 downto 0),
+		i_A	=> i_D(7 downto 0),
+		o_F	=> s_3);
+
+----------------------------------
+-- Layer 2: 2x1 between output and 8x1
+----------------------------------
+    g_Mux5: dataflow_mux2t1
+	port MAP(i_S	=> i_S2,
+		i_D0	=> s_0,
+		i_D1	=> s_1,
+		o_O	=> s_4);
+    g_Mux6: dataflow_mux2t1
+	port MAP(i_S	=> i_S2,
+		i_D0	=> s_2,
+		i_D1	=> s_3,
+		o_O	=> s_5);
+
+----------------------------------
+-- Layer 3: Final mux
+----------------------------------
+    g_Mux7: dataflow_mux2t1
+	port MAP(i_S	=> i_S3,
+		i_D0	=> s_4,
+		i_D1	=> s_5,
+		o_O	=> o_F);
+end structure;
