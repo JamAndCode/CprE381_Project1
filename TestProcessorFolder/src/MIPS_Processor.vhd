@@ -70,20 +70,29 @@ architecture structure of MIPS_Processor is
   signal s_Shift		: std_logic;
   signal s_Ss			: std_logic;
   signal s_useAlu		: std_logic;
+  signal s_SLT			: std_logic;
   signal s_Shifter		: std_logic_vector(31 downto 0);
 
+signal s_SLTtJALC		: std_logic_vector(31 downto 0);
+
+signal s_SetOnLess		:std_logic_vector(31 downto 0);
 signal s_PC			: std_logic_vector(31 downto 0);
 signal s_ALUorShift		: std_logic_vector(31 downto 0);
-signal s_jumpAdd		: std_logic_vector(31 downto 0);
+signal s_jumpAddr		: std_logic_vector(31 downto 0);
+signal s_jumpTop		: std_logic_vector(31 downto 0);
+signal s_jumpBot		: std_logic_vector(31 downto 0);
+signal s_ShiftAdd		: std_logic_vector(31 downto 0);
+signal s_branchAdd		: std_logic_vector(31 downto 0);
+signal s_branchShift		: std_logic_vector(31 downto 0);
   -- Signals between components
 signal s_Extended		: std_logic_vector(31 downto 0);
 signal s_RegDstWrite		: std_logic_vector(4 downto 0); --Signal between register destination write mux and jump and link mux
 signal s_RegReadData1		: std_logic_vector(31 downto 0); --signal out of register file for read data 1
+signal s_RegReadData2		: std_logic_vector(31 downto 0); --signal out of register file for read data 2
 signal s_OutShift		: std_logic_vector(4 downto 0); --signa between shift mux and ALU
 signal s_OutALUsrc		: std_logic_vector(31 downto 0); --signa between ALURSC mux and ALU
 signal s_MtRUI			: std_logic_vector(31 downto 0); --signal between MemtoReg mux and upper immediate mux
 signal s_UItSLT			: std_logic_vector(31 downto 0); --signal between upper immediate to set on less than
-signal s_SLTtJALC		: std_logic_vector(31 downto 0); --signal between set on less than to jump and link control
 signal s_ALUzero		: std_logic; --signal of alu from zero output
 signal s_InstShift		: std_logic_vector(31 downto 0); --signal out of I.Mem barrel shifter
 signal s_RegShift		: std_logic_vector(31 downto 0); --signal out of the register barrel shifter
@@ -94,6 +103,7 @@ signal s_JCtJRC			: std_logic_vector(31 downto 0); --signal from jump control mu
 signal s_PCout			: std_logic_vector(31 downto 0);
 signal s_backToPC		: std_logic_vector(31 downto 0); --currently not actually connected, test then add in
 signal s_UpperImmediates	: std_logic_vector(31 downto 0);
+signal s_ALUout			: std_logic_vector(31 downto 0);
 
 
   --Components
@@ -242,10 +252,10 @@ begin
              q    => s_DMemOut);
 
   -- TODO: Ensure that s_Halt is connected to an output control signal produced from decoding the Halt instruction (Opcode: 01 0100)
-s_Halt <='1' when (s_Inst(31 downto 26) = "000000") and (s_Inst(5 downto 0) = "010100")  else '0';
+--s_Halt <='1' when (s_Inst(31 downto 26) = "000000") and (s_Inst(5 downto 0) = "010100")  else '0';
   -- TODO: Ensure that s_Ovfl is connected to the overflow output of your ALU
 
---Control Unit [Checked, should be good]
+--Control Unit
  controller : control
 port MAP(op_code	        => s_Inst(5 downto 0),
 	fun      		=> s_Inst(N-1 downto N-6),
@@ -267,43 +277,46 @@ port MAP(op_code	        => s_Inst(5 downto 0),
 	use_alu			=> s_UseAlu,
         alu_control    		=> s_ALUcontrol);	---alu control combination
 
---Register Destination Write Mux [Checked, should be good]
+--Register Destination Write Mux
 RegDestWrite: mux2t1_5
   port MAP(i_S      => s_Reg_Dst,
        i_D0         => s_Inst(20 downto 16),
        i_D1         => s_Inst(15 downto 11),
        o_O          => s_RegDstWrite);
 
---Jump and Link Mux [not bound]
+--Jump and Link Mux
    JumpAndLink: mux2t1_5
 	port MAP(i_S    => s_jump_link,
        		i_D0   	=> s_RegDstWrite,
        		i_D1 	=> "11111", --31 in binary
        		o_O	=> s_RegWrAddr); 
 
---Register File [not bound]
+--Register File
 register1: registerBoi
   port MAP(	i_CLK	    	=> iCLK,
-		i_WriteEnable	=> s_RegWrite,
+		i_WriteEnable	=> s_RegWr,
 		i_RST		=> iRST,
 		i_ReadReg1	=> s_Inst(25 downto 21),
 		i_ReadReg2	=> s_Inst(20 downto 16),
 		i_WriteReg	=> s_RegWrAddr,
 		i_WriteData	=> s_RegWrData,
 		o_ReadData1	=> s_RegReadData1,
-		o_ReadData2	=> s_RegWrData);
+		o_ReadData2	=> s_RegReadData2);
 
---Shift control Mux [checked should be good]
+--reassign 2nd reg output to DMem
+s_DMemData <= s_RegReadData2;
+
+--Shift control Mux
   ShiftControl: mux2t1_5
 	port MAP(i_S    => s_Shift,
 		i_D0 	=> s_Inst(10 downto 6),
        		i_D1   	=> s_RegReadData1(4 downto 0),
        		o_O	=> s_OutShift); 
 
---ALUSsrc control Mux [Checked, should be good]
+--ALUSsrc control Mux
   ALUsrc: mux32_N
 	port MAP(i_S    => s_ALUsrc,
-       		i_D0   	=> s_RegWrData,
+       		i_D0   	=> s_RegReadData2,
        		i_D1 	=> s_Extended,  
        		o_O	=> s_OutALUsrc);
 --shifter 
@@ -329,16 +342,19 @@ ShiftALU: mux32_N
 	port MAP(i_S    => s_UseAlu,
        		i_D0   	=> s_ALUorShift,
        		i_D1 	=> s_Shifter,  
-       		o_O	=> s_DMemAddr);
+       		o_O	=> s_ALUout);
 
+--technically still the ALU output, just now with shifter added
+oALUOut <= s_ALUorShift;
+s_DMemAddr <= s_ALUout;
 
---Extender [not bound]
+--Extender
   Extender: extend
   port MAP(i_A	=> s_Inst(15 downto 0),
 	i_S	=> '1',
 	o_F	=> s_Extended);
 
---And signal the Branch mux [Checked, should be good]
+--And signal the Branch mux
 andControl: andg2
   port MAP(i_A        => s_ALUzero,
        i_B            => s_Branch,
@@ -355,8 +371,8 @@ andControl: andg2
 --Jump control mux
   JumpControl: mux32_N
 	port MAP(i_S    => s_Jump, 
-       		i_D0   	=> s_RegShift,
-       		i_D1 	=> s_BCtJC, 
+       		i_D0   	=> s_BCtJC,
+       		i_D1 	=> s_jumpAddr, 
        		o_O	=> s_JCtJRC);
 
 --Jump and Register Control
@@ -386,14 +402,42 @@ port MAP(largeVar	=> s_Extended,
        		i_D1 	=> s_MtRUI,
        		o_O	=> s_UItSLT);
 
---Jump and Link control mux
+--Find out if a SLTU has been called, and set the signal for later use
+process (s_RegReadData1, s_OutALUsrc, s_ALUout)
+begin
+  if ((s_RegReadData1(31) = '0') and (s_OutALUsrc(31) = '1')) then
+	s_SetOnLess <= x"00000001";
+  elsif ((s_RegReadData1(31) = '1') and (s_OutALUsrc(31) = '0')) then
+	s_SetOnLess <= x"00000000";
+  else
+	s_SetOnLess <= s_ALUOut;
+  end if;
+end process;
+
+process (s_Inst)
+begin
+  if (s_Inst(31 downto 26) = "101010") then
+	s_SLT <= '1';
+  else
+	s_SLT <= '0';
+  end if;
+end process;
+
+--SLTU mux
+  SLTUmux: mux32_N
+	port MAP(i_S    => s_SLT,
+       		i_D0   	=> s_UItSLT,
+       		i_D1 	=> s_SetOnLess, 
+       		o_O	=> s_SLTtJALC);
+
+--Jump and Link control mux [HERE IM HERE]
   JumpAndLinkDataWriter: mux32_N
 	port MAP(i_S    => s_jump_link,
-       		i_D0   	=> s_jumpAdd,
+       		i_D0   	=> s_jumpTop,
        		i_D1 	=> s_SLTtJALC, 
        		o_O	=> s_RegWrData);
 
-
+--PC
   PC: instructCount
   port MAP(iCLK		=> iCLK,
 	iRST		=> iRST,
@@ -401,15 +445,43 @@ port MAP(largeVar	=> s_Extended,
 	iInstAddr 	=> s_backToPC,
 	o_F		=> s_PC);
 
+ s_NextInstAddr <= s_PC;
+
+--increase the jumpto loction if there is a jump
   IncreasePC : add_sub
   port MAP(i_A	=> s_PC,
-    	 i_B 	=> x"00000004", 	
+    	 i_B 	=> x"00000004",
      	S	=> '0',
-     	o_Sum	=> s_jumpAdd,
+     	o_Sum	=> s_jumpTop,
      	o_Cout	=> open);
 
-  s_NextInstAddr <= s_PCOut;
+s_JumpAddr(31 downto 28) <= s_jumpTop(31 downto 28);
+s_JumpAddr(27 downto 0) <= s_jumpBot(27 downto 0);
 
+
+s_ShiftAdd(31 downto 26) <= "000000";
+s_ShiftAdd(25 downto 0) <= s_Inst(25 downto 0);
+
+jumpShifter: barShifter
+  port MAP(i_A 	=> s_ShiftAdd,
+	i_LorR	=> '0',
+	i_Log	=> '0',
+	i_Ss 	=> "00010",
+	o_F 	=> s_jumpBot);
+
+shiftBranch: barShifter
+  port MAP(i_A 	=> s_Extended,
+	i_LorR	=> '0',
+	i_Log	=> '0',
+	i_Ss 	=> "00010",
+	o_F 	=> s_branchShift);
+
+addBranch: add_sub
+port MAP(i_A	=> s_jumpTop,
+     i_B 	=> s_branchShift,	
+     S		=> '0',
+     o_Sum	=> s_branchAdd,
+     o_Cout	=> open);
 
 end structure;
 
