@@ -1,0 +1,1 @@
+Download this folder and run the test runner as per usual. This contains all the vhdl files and tests.
