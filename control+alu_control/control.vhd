@@ -1,3 +1,4 @@
+
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
@@ -26,7 +27,7 @@ end entity;
 
 architecture behavior of control is
 begin
-DUT0:process (op_code)
+DUT0:process (op_code,fun)
 
 begin
 case(op_code) is
@@ -322,4 +323,3 @@ end process;
 
 
 end behavior;
-
