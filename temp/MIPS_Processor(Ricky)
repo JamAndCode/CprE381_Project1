@@ -228,7 +228,7 @@ port MAP(i_A	=> "00000000000000000000000000000100",
 
 --Control Unit
  controller : control
-port MAP(op_code	       => s_Inst(5 downto 0),
+port MAP(op_code	       => s_Inst(N-1 downto N-6),
 	reg_dst	       => s_Reg_Dst,
 	jump	       => s_Jump,
 	jump_link      => s_jump_link,
@@ -241,7 +241,7 @@ port MAP(op_code	       => s_Inst(5 downto 0),
 	alu_src         => s_ALUsrc,
 	reg_write         => s_RegWrite,
 	o_overflow_enabled => s_overflowEnable,
-	fun       => s_Inst(N-1 downto N-6),
+	fun       => s_Inst(5 downto 0),
         alu_control    => s_ALUcontrol);	---alu control combination
 
 --The first Barrel Shifter
