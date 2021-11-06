@@ -57,7 +57,6 @@ architecture structure of MIPS_Processor is
   signal s_Branch		: std_logic; 
   signal s_MemRead		: std_logic; 
   signal s_MemWrite		: std_logic; 
-  signal s_RegWrite		: std_logic; 
   signal s_ALUsrc		: std_logic;
   signal s_jump_link      	: std_logic;
   signal s_jump_reg       	: std_logic;
@@ -68,7 +67,6 @@ architecture structure of MIPS_Processor is
   signal s_Log			: std_logic;
   signal s_Left			: std_logic;
   signal s_Shift		: std_logic;
-  signal s_Ss			: std_logic;
   signal s_useAlu		: std_logic;
   signal s_SLT			: std_logic;
   signal s_Shifter		: std_logic_vector(31 downto 0);
@@ -94,13 +92,8 @@ signal s_OutALUsrc		: std_logic_vector(31 downto 0); --signa between ALURSC mux 
 signal s_MtRUI			: std_logic_vector(31 downto 0); --signal between MemtoReg mux and upper immediate mux
 signal s_UItSLT			: std_logic_vector(31 downto 0); --signal between upper immediate to set on less than
 signal s_ALUzero		: std_logic; --signal of alu from zero output
-signal s_InstShift		: std_logic_vector(31 downto 0); --signal out of I.Mem barrel shifter
-signal s_RegShift		: std_logic_vector(31 downto 0); --signal out of the register barrel shifter
-signal s_AdderFromPC		: std_logic_vector(31 downto 0); --signal from the adder coming from PC output
-signal s_AdderFromShifter	: std_logic_vector(31 downto 0); --signal from the second adder output
 signal s_BCtJC			: std_logic_vector(31 downto 0); --signal from branch control mux to jump control mux
 signal s_JCtJRC			: std_logic_vector(31 downto 0); --signal from jump control mux to jump register control mux
-signal s_PCout			: std_logic_vector(31 downto 0);
 signal s_backToPC		: std_logic_vector(31 downto 0); --currently not actually connected, test then add in
 signal s_UpperImmediates	: std_logic_vector(31 downto 0);
 signal s_ALUout			: std_logic_vector(31 downto 0);
@@ -269,7 +262,7 @@ port MAP(op_code	        => s_Inst(N-1 downto N-6),
 	mem_to_reg         	=> s_MemToReg,
 	mem_write         	=> s_MemWrite,
 	alu_src         	=> s_ALUsrc,
-	reg_write         	=> s_RegWrite,
+	reg_write         	=> s_RegWr,
 	o_overflow_enabled 	=> s_overflowEnable,
 	o_Log 			=> s_Log,
 	o_Left 			=> s_Left,
@@ -337,6 +330,7 @@ TheALU: ALU
         o_zero      		=> s_ALUzero,
 	o_overflow   		=> s_Ovfl);
 
+oALUOut <= s_ALUorShift;
 --Mux that says if we use the shifter or the ALU
 ShiftALU: mux32_N
 	port MAP(i_S    => s_UseAlu,
@@ -345,7 +339,6 @@ ShiftALU: mux32_N
        		o_O	=> s_ALUout);
 
 --technically still the ALU output, just now with shifter added
-oALUOut <= s_ALUorShift;
 s_DMemAddr <= s_ALUout;
 
 --Extender
@@ -363,8 +356,8 @@ andControl: andg2
 --Branch control Mux
   BranchControl: mux32_N
 	port MAP(i_S    => s_Andcontrol, 
-       		i_D0   	=> s_AdderFromPC,
-       		i_D1 	=> s_AdderFromShifter,
+       		i_D0   	=> s_jumpTop,
+       		i_D1 	=> s_branchAdd,
        		o_O	=> s_BCtJC);
 
 
