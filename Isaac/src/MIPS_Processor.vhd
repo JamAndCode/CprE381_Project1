@@ -466,14 +466,39 @@ port MAP(i_S    => s_jump_reg,
 -- 	 Each also needs a clock and a reset.
 --	 Need to create a pipeline component that will be called for each of the Registers/pipelines
 
+
 --IF/ID Register (Instruction Fetch/ Instruction Decode)
 --lines coming in: s_Inst ; IncreasePC (line 390)
-IF_ID_REG: ________
+IF_ID_REG: pipeline_buffer
 port MAP(
-	i_CLK	=> iCLK,
-	i_RST	=> iRST,
+	i_CLK	=> iCLK;
+	i_RST	=> '0';
+	-- pipeline fills on rising-edge, so we need to reset it on the falling-edge
 
-	
+	i_pipeline0	=> s_Inst;	--instruction line
+	o_pipeline0	=> s_InstPipe;
+
+	i_pipeline1	=> s_jumpTop;	--name for PC+4
+	o_pipeline1	=> s_jumpTopPipe;
+
+	--below this is unsued for this pipeline's register
+	i_pipeline2	=> '0';
+	o_pipeline2	=> open;
+
+	i_pipeline3	=> '0'
+	o_pipeline3	=> open;
+
+	i_pipeline4	=> '0'
+	o_pipeline4	=> open;
+
+	i_pipeline5	=> '0'
+	o_pipeline5	=> open;
+
+ 	i_pipeline6	=> '0'
+	o_pipeline6	=> open;
+
+	i_pipeline7	=> '0'
+	o_pipeline7	=> open;
 	);
 
 
