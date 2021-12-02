@@ -469,46 +469,56 @@ port MAP(i_S    => s_jump_reg,
 
 --IF/ID Register (Instruction Fetch/ Instruction Decode)
 --lines coming in: s_Inst ; IncreasePC (line 390)
-IF_ID_REG: pipeline_buffer
+IF_ID_REG: pipeline_IF_ID
 port MAP(
 	i_CLK	=> iCLK;
 	i_RST	=> '0';
 	-- pipeline fills on rising-edge, so we need to reset it on the falling-edge
 
 	i_pipeline0	=> s_Inst;	--instruction line
-	o_pipeline0	=> s_InstPipe;
+	o_pipeline0	=> s_InstIFID;
 
 	i_pipeline1	=> s_jumpTop;	--name for PC+4
 	o_pipeline1	=> s_jumpTopPipe;
-
-	--below this is unsued for this pipeline's register
-	i_pipeline2	=> '0';
-	o_pipeline2	=> open;
-
-	i_pipeline3	=> '0'
-	o_pipeline3	=> open;
-
-	i_pipeline4	=> '0'
-	o_pipeline4	=> open;
-
-	i_pipeline5	=> '0'
-	o_pipeline5	=> open;
-
- 	i_pipeline6	=> '0'
-	o_pipeline6	=> open;
-
-	i_pipeline7	=> '0'
-	o_pipeline7	=> open;
 	);
 
 
 --ID/EX Register  (Instruction Decode/ Execution)
-ID_EX_REG: ________
+--
+ID_EX_REG: pipeline_ID_EX
 port MAP(
 	i_CLK	=> iCLK,
 	i_RST	=> iRST,
 
-	
+	i_pipeline0	=> --Control WB
+	o_pipeline0	=> 
+
+	i_pipeline1	=> --Control Mem (called "M" on sheet)
+	o_pipeline1	=> 
+
+	i_pipeline2	=> --Control EX
+	o_pipeline2	=> 
+
+	i_pipeline3	=> s_InstIFID --Instruction line out of prev. pipeline
+	o_pipeline3	=> s_InstIDEX
+
+	i_pipeline4	=> --Reg read data 1
+	o_pipeline4	=> 
+
+	i_pipeline5	=> --Reg read data 2
+	o_pipeline5	=> 
+
+	i_pipeline6	=> --Inst[15-0] after sign-extend (s_ExtendShift???)
+	o_pipeline6	=> 
+
+	i_pipeline7	=> --Inst[20-16]
+	o_pipeline7	=> 
+
+	i_pipeline8	=> --Inst[15-11]
+	o_pipeline8	=> 
+
+	i_pipeline9	=> --unknown, diagram shows 10 lines total
+	o_pipeline9	=> 
 	);
 
 --EX/MEM Register   (Execution/ Memory Access)
