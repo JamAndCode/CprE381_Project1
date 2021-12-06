@@ -50,7 +50,7 @@ architecture mixed of pipeline_buffer is
 		i_WE	: in std_logic;
 		i_data	: in std_logic_vector(N-1 downto 0);
 		o_data	: out std_logic_vector(N-1 downto 0));
-	end componet;
+	end component;
 
 
 	begin
@@ -93,27 +93,3 @@ architecture mixed of pipeline_buffer is
 
 end mixed;
 			
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
