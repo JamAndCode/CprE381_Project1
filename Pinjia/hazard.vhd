@@ -23,7 +23,7 @@ architecture dataflow of hazard is
 signal load_hazard,branch_hazard	:BOOLEAN;
 begin
 
-load_hazard<=((mem_read='1') and (((inst_IDEX(20 downto 16)=inst_EXMEM(25 downto 21)) and (inst_IFID(25 downto 21)/="00000")) or ((inst_IDEX(20 downto 16)=inst_IFID(20 downto 16)) and (inst_IFID(20 downto 16)="00000"))));
+load_hazard<=((mem_read='1') and (((inst_IDEX(20 downto 16)=inst_IFID(25 downto 21)) and (inst_IFID(25 downto 21)/="00000")) or ((inst_IDEX(20 downto 16)=inst_IFID(20 downto 16)) and (inst_IFID(20 downto 16)=/"00000"))));
 branch_hazard<=((i_Branch='1') and ((ex_write=inst_IFID(25 downto 21) and (inst_IFID(25 downto 21)/="00000")) or ((ex_write=inst_IFID(20 downto 16)) and (inst_IFID(20 downto 16)/="00000"))));
 
 
