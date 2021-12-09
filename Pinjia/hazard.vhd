@@ -2,7 +2,7 @@ LIBRARY IEEE;
 USE IEEE.std_logic_1164.ALL;
 USE IEEE.numeric_std.ALL;
 
-entity hazards is
+entity hazard is
   port (i_Branch	: in std_logic;
   real_branch		:in std_logic;
 	i_JUmp		:in std_logic;
@@ -18,7 +18,7 @@ entity hazards is
 	stall_PC	:  out std_logic);
 end entity;
 
-architecture dataflow of hazards is
+architecture dataflow of hazard is
 
 signal load_hazard,branch_hazard	:BOOLEAN;
 begin
@@ -29,10 +29,7 @@ branch_hazard<=((i_Branch='1') and ((ex_write=inst_IFID(25 downto 21) and (inst_
 
 DUT0:process(i_JUmp,load_hazard,i_Branch,real_branch,branch_hazard)
 begin
-flush_IFID<='0';
-flush_IDEX<='0';
-stall_IDEX<='0';
-stall_IFID<='0';
+
 
 if(i_JUmp='1') then
 	flush_IFID<='1';
@@ -40,29 +37,37 @@ if(i_JUmp='1') then
 	stall_PC<='0';
 	stall_IDEX<='1';
 	stall_IFID<='1';
-end if;
 
-if(real_branch='1') then
+
+elsif(real_branch='1') then
 flush_IFID<='1';
 flush_IDEX<='0';
 stall_PC<='0';
 stall_IFID<='1';
-end if;
 
-if(load_hazard) then
+
+elsif(load_hazard) then
 flush_IDEX<='1';
 flush_IFID<='0';
 stall_PC<='1';
 stall_IDEX<='1';
 stall_IFID<='0';
-end if;
 
-if(branch_hazard) then
+
+elsif(branch_hazard) then
 flush_IDEX<='0';
 flush_IFID<='0';
 stall_PC<='1';
 stall_IDEX<='1';
 stall_IFID<='1';
+
+else
+flush_IFID<='0';
+flush_IDEX<='0';
+stall_IDEX<='0';
+stall_IFID<='0';
+stall_PC<='0';
+
 end if;
 end process;
 
