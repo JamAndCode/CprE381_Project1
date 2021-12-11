@@ -50,7 +50,7 @@ end component;
 	signal s_EX_MEM_RegWrite 	: std_logic;
 	signal s_ID_EX_RegisterRs 	: std_logic_vector(25 downto 21);
 	signal s_ID_EX_RegisterRt	: std_logic_vector(20 downto 16);
-	signal s_MEM_WB_RegisterRd	: std_logic_vector(15 downto 11); --destination reg (like above)
+	signal s_MEM_WB_RegisterRd	: std_logic_vector(15 downto 11);
 	signal s_EX_MEM_RegisterRd	: std_logic_vector(15 downto 11);
 	signal s_ForwardA		: std_logic_vector(1 downto 0);
 	signal s_ForwardB		: std_logic_vector(1 downto 0);
